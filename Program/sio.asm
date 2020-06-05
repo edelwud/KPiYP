@@ -181,119 +181,104 @@ get_cmd_argument_exit:
     ret
 endp
 
-open_file proc C near
-arg file_path_ptr:word
-uses bx, cx
-    mov di, file_path_ptr
-    inc di
-
-    xor bx, bx
-    mov bl, byte ptr [di]
-    add di, bx
-    inc di
-    
-    mov byte ptr [di], 0
-
-    mov dx, file_path_ptr
-    add dx, 2
-    mov ah, 3dh
-    mov al, 00b
+alloc_memory_block proc C near
+arg block_size: word
+    mov ah, 48h
+    mov bx, block_size
     int 21h
-
-    mov byte ptr [di], "$"
-
-    jc open_file_error
-    jmp open_file_exit
-open_file_error:
+    jc alloc_memory_block_error
+    jmp alloc_memory_block_exit
+alloc_memory_block_error:
     mov dx, 0
     ret
-open_file_exit:
+alloc_memory_block_exit:
     mov dx, 1
     ret
 endp
 
-fill_file_buffer proc C near
-arg file_descriptor:word, file_buffer_ptr:word
-uses bx, cx
-    mov ah, 3fh
-    mov cx, BUFSIZ
-    mov bx, file_descriptor
-    mov dx, file_buffer_ptr
+resize_memory_block proc C near
+arg seg_ptr: word, block_size: word
+uses ax, bx, cx, es
+    push seg_ptr
+    pop es
+    mov bx, block_size
+    mov ah, 4ah
     int 21h
-    jc fill_file_buffer_error
-    jmp fill_file_buffer_exit
-fill_file_buffer_error:
+    jc resize_memory_block_error
+    jmp resize_memory_block_exit
+resize_memory_block_error:
     mov dx, 0
     ret
-fill_file_buffer_exit:
+resize_memory_block_exit:
     mov dx, 1
     ret
 endp
 
-count_empty_lines proc C near
-arg file_buffer_ptr: word, buflen: word, flag: word
-uses ax, bx, cx
-    xor dx, dx
-    xor cx, cx
-    mov bx, file_buffer_ptr
-count_empty_lines_iter:
-    cmp byte ptr [bx], 0Ah
-    je count_empty_lines_found
-
-    mov byte ptr [flag], 0
-
-    inc bx
-    inc cx
-    cmp cx, buflen
-    jne count_empty_lines_iter
-    jae count_empty_lines_exit
-count_empty_lines_found:
-    cmp byte ptr [flag], 1
-    je count_empty_lines_found_new
-
-    mov byte ptr [flag], 1
-    inc bx
-    inc cx
-    cmp cx, buflen
-    jne count_empty_lines_iter
-    jmp count_empty_lines_exit
-count_empty_lines_found_new:
-    inc dx
-    inc bx
-    inc cx
-    cmp cx, buflen
-    jne count_empty_lines_iter
-    jmp count_empty_lines_exit
-count_empty_lines_exit:
-    ret
-endp
-
-close_file proc C near
-arg descriptor:word
-uses bx, cx
-    mov ah, 3eh
-    mov bx, descriptor
-    int 21h
-    jc close_file_error
-    jmp close_file_exit
-close_file_error:
-    mov dx, 0
-    ret
-close_file_exit:
-    mov dx, 1
-    ret
-endp
-
-clean_file_buffer proc C near
-arg file_buffer_ptr: word
-uses ax, cx, es, di
-    push @data
+load_and_exec_program proc C near
+arg program_path_ptr: word, cmd_ptr: word, EPB_ptr: word
+uses ax, bx, cx, es
+    push ds
     pop es
 
-    mov cx, BUFSIZ
-    mov al, 0
-    mov di, file_buffer_ptr
+    mov dx, program_path_ptr
+    mov bx, EPB_ptr
 
-    rep stosb
+    add bx, 2
+    mov ax, cmd_ptr
+    mov word ptr [bx], ax
+    
+    add bx, 2
+    mov word ptr [bx], ds
+
+    mov bx, EPB_ptr
+
+    mov ax, 4b00h
+    int 21h
+    jc load_and_exec_program_error
+    jmp load_and_exec_program_exit
+load_and_exec_program_error:
+    mov dx, 0
+    ret
+load_and_exec_program_exit:
+    mov dx, 1
+    ret
+endp
+
+getint proc C near
+arg number_buffer_ptr: word
+uses bx, cx
+    mov bx, number_buffer_ptr
+    add bx, 2
+
+    xor ax, ax
+    xor cx, cx
+getint_iter:
+    mov cl, byte ptr [bx]
+    
+    cmp cl, '$' 
+    je getint_exit
+
+    cmp cl, "0"
+    jl getint_iter_error
+    cmp cl, "9"
+    ja getint_iter_error
+    
+    push bx
+    mov bx, 10
+    mul bx
+    jo getint_iter_error
+    pop bx
+
+    sub cl, '0'
+    add al, cl
+    jc getint_iter_error
+
+    inc bx
+    jmp getint_iter
+getint_iter_error:
+    mov dx, 0
+    ret
+getint_exit:
+    mov dx, 1
     ret
 endp

@@ -11,7 +11,7 @@
     read_bytes_buffer db CMD_BUFSIZ, 0, 4 dup("0"), "$"
     scan_empty_lines_buffer db CMD_BUFSIZ, 0, 4 dup("0"), "$"
     empty_lines dw 0
-    new_line_ended dw 1
+    new_line_ended db 1
 
     program_info_message db CMD_BUFSIZ, 0, "# New line counter", "$"
     cmd_process_message db CMD_BUFSIZ, 0, "Processing cmd arguments...", "$"
@@ -40,6 +40,7 @@
     error_close_file_message db CMD_BUFSIZ, 0, "Cannot close file: ", "$"
     error_close_file_descriptor_message db CMD_BUFSIZ, 0, "invalid descriptor", "$"
 
+
 include sio.asm
 
 .code
@@ -56,6 +57,8 @@ start:
 
     mov ax, 0080h
     mov bx, 0081h
+
+    xor cx, cx
 
     call get_cmd_argument C, bx, ax, offset file_path, 1
     cmp dx, 0
@@ -126,10 +129,25 @@ file_success_opened:
 
     call printstring C, offset file_scanning_message
     call printstring C, offset newline
+
+    mov byte ptr [new_line_ended], 1
 file_reader:
     call fill_file_buffer C, word ptr file_desc, offset file_buffer 
     cmp dx, 0
     je error_read_file
+
+    cmp cx, 0
+    je first_reading
+    jmp continue_3
+first_reading:
+    cmp byte ptr [file_buffer], 10
+    je increase_empty_lines
+    jmp continue_3
+increase_empty_lines:
+    mov byte ptr empty_lines, 1
+    mov byte ptr new_line_ended, 1
+continue_3:
+    inc cx
 
     mov word ptr read_size, ax
     jmp readed_file_part
@@ -153,9 +171,10 @@ readed_file_part:
     jne read_more
     jmp continue
 read_more:
-    call count_empty_lines C, offset file_buffer, word ptr read_size, new_line_ended
+    call count_empty_lines C, offset file_buffer, word ptr read_size, offset new_line_ended
     add word ptr empty_lines, dx
     call clean_file_buffer C, offset file_buffer
+
     jmp file_reader
 continue:
     call printstring C, offset file_scanning_completed_message

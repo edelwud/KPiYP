@@ -1,7 +1,7 @@
 # INCOMING
 FILENAMES=MAIN
 
-WORK_FOLDER=/home/edelwud/ASM/TASM/BIN
+WORK_FOLDER=/home/edelwud/ASM/TASM1
 MAKEFILE_PATH=$(abspath $(lastword $(MAKEFILE_LIST)))
 CURRENT_FOLDER=$(patsubst %/,%,$(dir $(MAKEFILE_PATH)))
 DIST_FOLDER=dist
@@ -30,7 +30,18 @@ CMD = $(CMD_INTERFACE) $(1)
 MOVE_CMD = $(call CMD,"copy $(1) $(2)") \
 $(call CMD, "del $(1)")
 
-all: build execute
+all: program build execute
+
+program:
+	dosbox \
+	$(call CMD,"mount $(DISK_COMPILATOR_NAME) $(WORK_FOLDER)") \
+	$(call CMD,"mount $(DISK_EXECUTABLE_NAME) $(CURRENT_FOLDER)") \
+	$(call CMD,"$(DISK_EXECUTABLE_NAME):") \
+	$(call CMD,"$(DISK_COMPILATOR_NAME):\TASM.EXE program.asm > $(DEBUG_FOLDER)/c_program.txt") \
+	$(call CMD,"$(DISK_COMPILATOR_NAME):\TLINK.EXE program.obj > $(DEBUG_FOLDER)/l_program.txt") \
+	$(call MOVE_CMD,program.obj,$(DIST_FOLDER)) \
+	$(call MOVE_CMD,program.exe,$(DIST_FOLDER)) \
+	$(call CMD,"exit")
 	
 build:
 	dosbox \
