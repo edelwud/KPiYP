@@ -10,7 +10,7 @@ zero ends
     code_seg_ptr dw ?
     num db 4 dup("0"), "$"
     path db "D:/dist/program.exe", 0
-    EPB db 22 dup(?)
+    EPB db 18 dup(?), 
     param db 13, " Program 0000"
 
     number_buffer db 80, 0, 79 dup(?), "$"
@@ -24,6 +24,12 @@ zero ends
     input_error_message db 80, 0, "Input error, range [0-255]", "$"
     success_message db 80, 0, "Success", "$"
     error_message db 80, 0, "Error", "$"
+
+    error_file_not_found_message db 80, 0, ": file not found", "$"
+    error_no_access_message db 80, 0, ": no access", "$"
+    error_no_memory_message db 80, 0, ": no free memory", "$"
+    error_enviroment_message db 80, 0, ": rediculous enviroment", "$"
+    error_format_message db 80, 0, ": rediculous format", "$"
 include sio.asm
 
 .code
@@ -52,9 +58,7 @@ resize_memory_block_success:
     mov program_seg_ptr, ax
 
     call printstring C, offset number_exec_prog_message
-    call getstring C, offset number_buffer
-    call getint C, offset number_buffer
-
+    call get_cmd_argument C, 0081h, 0080h, offset number_buffer, 1
     cmp dx, 0
     je input_error
     jmp start_processing
@@ -62,6 +66,13 @@ input_error:
     call printstring C, offset input_error_message
     jmp exit
 start_processing:
+    call printstring C, offset number_buffer
+    call getint C, offset number_buffer
+    call printstring C, offset newline
+
+    cmp dx, 0
+    je input_error
+
     mov cx, ax
     cmp cx, 0
     jne program_exec_iter

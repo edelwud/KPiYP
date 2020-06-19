@@ -1,7 +1,7 @@
 # INCOMING
 FILENAMES=MAIN
 
-WORK_FOLDER=/home/edelwud/ASM/TASM/BIN
+WORK_FOLDER=D:\Dev\TASM
 MAKEFILE_PATH=$(abspath $(lastword $(MAKEFILE_LIST)))
 CURRENT_FOLDER=$(patsubst %/,%,$(dir $(MAKEFILE_PATH)))
 DIST_FOLDER=dist

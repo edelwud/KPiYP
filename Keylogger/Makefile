@@ -30,18 +30,7 @@ CMD = $(CMD_INTERFACE) $(1)
 MOVE_CMD = $(call CMD,"copy $(1) $(2)") \
 $(call CMD, "del $(1)")
 
-all: program build execute
-
-program:
-	dosbox \
-	$(call CMD,"mount $(DISK_COMPILATOR_NAME) $(WORK_FOLDER)") \
-	$(call CMD,"mount $(DISK_EXECUTABLE_NAME) $(CURRENT_FOLDER)") \
-	$(call CMD,"$(DISK_EXECUTABLE_NAME):") \
-	$(call CMD,"$(DISK_COMPILATOR_NAME):\TASM.EXE program.asm > $(DEBUG_FOLDER)/c_program.txt") \
-	$(call CMD,"$(DISK_COMPILATOR_NAME):\TLINK.EXE program.obj > $(DEBUG_FOLDER)/l_program.txt") \
-	$(call MOVE_CMD,program.obj,$(DIST_FOLDER)) \
-	$(call MOVE_CMD,program.exe,$(DIST_FOLDER)) \
-	$(call CMD,"exit")
+all: build execute
 	
 build:
 	dosbox \
@@ -59,7 +48,7 @@ execute:
 	$(call CMD,"mount $(DISK_EXECUTABLE_NAME) $(CURRENT_FOLDER)") \
 	$(call CMD,"$(DISK_EXECUTABLE_NAME):") \
 	$(call CMD,"cls") \
-	$(call CMD,"$(DIST_FOLDER)\$(EXECUTABLE) n5")
+	$(call CMD,"$(DIST_FOLDER)\$(EXECUTABLE)")
 	# $(call CMD,"exit")
 	
 deb: build
@@ -67,4 +56,4 @@ deb: build
 	$(call CMD,"mount $(DISK_COMPILATOR_NAME) $(WORK_FOLDER)") \
 	$(call CMD,"mount $(DISK_EXECUTABLE_NAME) $(CURRENT_FOLDER)") \
 	$(call CMD,"$(DISK_EXECUTABLE_NAME):") \
-	$(call CMD,"$(DISK_COMPILATOR_NAME):\td.EXE $(DIST_FOLDER)\$(EXECUTABLE) d:\file.txt")
+	$(call CMD,"$(DISK_COMPILATOR_NAME):\td.EXE $(DIST_FOLDER)\$(EXECUTABLE)")
